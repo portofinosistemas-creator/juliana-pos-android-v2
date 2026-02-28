@@ -20,18 +20,29 @@ function escapeHtml(input: string): string {
 }
 
 function printWithBrowserDialog(job: AndroidPrintJob): PrintResult {
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!printWindow) {
+  const ticket = job.lines.map(escapeHtml).join("\n");
+  const width = job.paperSize === "58mm" ? "58mm" : "80mm";
+  const frame = document.createElement("iframe");
+  frame.style.position = "fixed";
+  frame.style.width = "0";
+  frame.style.height = "0";
+  frame.style.border = "0";
+  frame.style.right = "0";
+  frame.style.bottom = "0";
+  frame.setAttribute("aria-hidden", "true");
+  document.body.appendChild(frame);
+
+  const frameDoc = frame.contentDocument;
+  if (!frameDoc) {
+    frame.remove();
     return {
       ok: false,
       message: "No se pudo abrir el dialogo de impresion del navegador.",
     };
   }
 
-  const ticket = job.lines.map(escapeHtml).join("\n");
-  const width = job.paperSize === "58mm" ? "58mm" : "80mm";
-
-  printWindow.document.write(`<!doctype html>
+  frameDoc.open();
+  frameDoc.write(`<!doctype html>
 <html>
   <head>
     <meta charset="utf-8" />
@@ -44,10 +55,22 @@ function printWithBrowserDialog(job: AndroidPrintJob): PrintResult {
   </head>
   <body>${ticket}</body>
 </html>`);
-  printWindow.document.close();
-  printWindow.focus();
-  printWindow.print();
-  setTimeout(() => printWindow.close(), 400);
+  frameDoc.close();
+
+  const frameWindow = frame.contentWindow;
+  if (!frameWindow) {
+    frame.remove();
+    return {
+      ok: false,
+      message: "No se pudo abrir el dialogo de impresion del navegador.",
+    };
+  }
+
+  setTimeout(() => {
+    frameWindow.focus();
+    frameWindow.print();
+    setTimeout(() => frame.remove(), 800);
+  }, 120);
 
   return {
     ok: true,
