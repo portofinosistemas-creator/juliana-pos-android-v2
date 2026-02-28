@@ -1,6 +1,6 @@
 import type { AndroidPrintJob, PrintResult } from "../../types/print";
 
-const ANDROID_SCHEME = "my.bluetoothprint.scheme://data:application/json,";
+const ANDROID_SCHEME = "my.bluetoothprint.scheme:data:application/json,";
 
 function isAndroid(): boolean {
   if (typeof navigator === "undefined") return false;
